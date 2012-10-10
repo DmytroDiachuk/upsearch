@@ -427,7 +427,8 @@ class Upsearch
             $m = 'insertDataTable: alter : Errors: '.$this->db->error.' Query was:'
                 . $q.'<br/>';
             $this->message['all'][] = $m;
-            throw new ErrorException($m);
+            //throw new ErrorException($m);
+            //may cause error
         }
         return true;
     }
