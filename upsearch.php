@@ -270,6 +270,7 @@ class Upsearch
     (
         $offset
     ) {
+        $this->rowsCount = 0;
         $it_was_last = false;
         //connection should be established
         if (!$this->db) {
@@ -331,24 +332,24 @@ class Upsearch
     (
         $last_increment
     ) {
-
+        $this->rowsCount = 0;
         //connection should be established
         if (!$this->db) {
-            $m = 'GetDataTable: Trying to reset table without connection to DB. ';
+            $m = 'getLastDataTable: connection to DB. ';
             $this->message['all'][] = $m;
             throw new ErrorException($m);
         }
         //get data from TablePos
         $q = 'SELECT increment, ratings, goroda, CONCAT_WS(" ",'
             . $this->fieldsList.
-            ') as text_insert FROM'
+            ') as text_insert FROM '
             . $this->tablePos_name .' WHERE
             increment >'.$last_increment.'
             ORDER BY increment ASC';
         $get_data = $this->db->query($q);
 
         if ((!$get_data) || $this->db->errno) {
-            $m = 'GetDataTable: Errors: '.$this->db->error.' Query was:'
+            $m = 'getLastDataTable: Errors: '.$this->db->error.' Query was:'
                 . $q.'<br/>';;
             $this->message['all'][] = $m;
             throw new ErrorException($m);
@@ -599,6 +600,9 @@ class Upsearch
             }
             $res = $selection->fetch_assoc();
             $last_increment = $res['increment'];
+            if (!$last_increment) {
+                $last_increment = 0;
+            }
 
             //Вытягиваем все записи с таблици   TablePos  в которых increment больше
             //за последний
