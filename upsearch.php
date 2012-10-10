@@ -173,6 +173,7 @@ class Upsearch
         $settings
     ) {
         $this->tablePos_name = $settings['database']['tablePos_name'];
+        $this->search_full_name = $settings['database']['search_full_name'];
         $this->_dbConf = $settings['database']['params'];
         $this->rowsGetCount = $settings['rowsGetCount'];
         $this->fieldsList = $settings['fieldsList'];
@@ -239,7 +240,7 @@ class Upsearch
             throw new ErrorException($m);
         }
         //drop fulltext index
-        $q = 'ALTER TABLE search_full DROP INDEX full_text';
+        $q = 'ALTER TABLE '.$this->search_full_name.' DROP INDEX full_text';
         $drop_index = $this->db->query($q);
         if ((!$drop_index) || $this->db->errno) {
             $m = 'resetTable: Errors: '.$this->db->error;
@@ -386,7 +387,7 @@ class Upsearch
             throw new ErrorException($m);
         }
         //create insertion query
-        $q = 'INSERT INTO search_full
+        $q = 'INSERT INTO '.$this->search_full_name.'
         (increment,ratings,goroda,text_insert) VALUES ';
 
         for ($j=0;$j<$this->rowsCount;$j++) {
@@ -412,7 +413,7 @@ class Upsearch
             throw new ErrorException($m);
         }
 
-        $q = 'ALTER TABLE search_full ADD FULLTEXT(text_insert)';
+        $q = 'ALTER TABLE '.$this->search_full_name.' ADD FULLTEXT(text_insert)';
         $creation = $this->db->query($q);
         if ((!$creation) || $this->db->errno) {
             $m = 'insertDataTable: alter : Errors: '.$this->db->error.' Query was:'
@@ -595,7 +596,7 @@ class Upsearch
             //$this->resetTable();
 
             //Берем последний increment
-            $q = 'SELECT increment  FROM   search_full   order by
+            $q = 'SELECT increment FROM '.$this->search_full_name.' order by
                     increment
                     DESC limit 1';
             $selection = $this->db->query($q);
