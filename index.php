@@ -12,7 +12,7 @@ $u = new Upsearch($settings);
 
 echo 'TEST<br/>';
 
-//$u->fullUpdate();
-$u->doRealUpdate();
+$u->fullUpdate();
+//$u->doRealUpdate();
 
 echo 'all done!';

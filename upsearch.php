@@ -200,15 +200,19 @@ class Upsearch
             //connected
             //reset table
             $this->resetTable();
-
+            $this->fieldsData = array();
             //get, process
             do {
                 $r = $this->getDataTable($this->rowsOffset);
                 //process  write data
+
                 if ($this->rowsCount>0) {
                     $this->insertDataTable();
                 }
             } While ($r);
+            if (is_array($this->fieldsData)) {
+                $this->recreateIndex();
+            }
 
         }
         catch (ErrorException $e) {
@@ -296,6 +300,7 @@ class Upsearch
             throw new ErrorException($m);
         }
         $this->rowsCount = $get_data->num_rows;
+
         if ($this->rowsCount < $this->rowsGetCount) {
             $it_was_last = true;
         }
@@ -305,6 +310,7 @@ class Upsearch
 
         $i=0;//row counter
         while (($row = $get_data->fetch_assoc())!=false) {
+
             $this->fieldsData[$i]['increment'] = $row['increment'];
             $this->fieldsData[$i]['ratings']= $row['ratings'];
             $this->fieldsData[$i]['goroda'] = $row['goroda'];
@@ -316,7 +322,7 @@ class Upsearch
 
         }
 
-        return !($this->rowsCount=0 || $it_was_last);
+        return !($this->rowsCount==0 || $it_was_last);
 
     }
 
@@ -413,6 +419,7 @@ class Upsearch
         }
         //INSERT INTO tbl_name (a,b,c) VALUES(1,2,3),(4,5,6),(7,8,9)
         $q = rtrim($q, ',');
+
         $insertion = $this->db->query($q);
         if ((!$insertion) || $this->db->errno) {
             $m = 'insertDataTable: insertion : '.$this->db->error.' Query was:'
@@ -421,6 +428,36 @@ class Upsearch
             throw new ErrorException($m);
         }
 
+        return true;
+    }
+
+    /**
+     * recreateIndex
+     *
+     * @return boolean
+     *
+     * @throws ErrorException
+     */
+    protected function recreateIndex
+    ()
+    {
+
+        //connection should be established
+        if (!$this->db) {
+            $m = 'insertDataTable: Trying to insert table without connection to DB.';
+            $this->message['all'][] = $m;
+            throw new ErrorException($m);
+        }
+
+        $q = 'ALTER TABLE '.$this->search_full_name.' DROP INDEX full_text ';
+        $drop = $this->db->query($q);
+        if ((!$drop) || $this->db->errno) {
+            $m = 'insertDataTable: DROP : Errors: '.$this->db->error.' Query was:'
+                . $q.'<br/>';
+            $this->message['all'][] = $m;
+            //throw new ErrorException($m);
+
+        }
         $q = 'ALTER TABLE '.$this->search_full_name.' ADD FULLTEXT(full_text)';
         $creation = $this->db->query($q);
         if ((!$creation) || $this->db->errno) {
@@ -432,8 +469,6 @@ class Upsearch
         }
         return true;
     }
-
-
 
     /**
      * Удаляем теги!
@@ -589,7 +624,7 @@ class Upsearch
 
             ////reset table
             //$this->resetTable();
-
+            $this->fieldsData = array();
             //Берем последний increment
             $q = 'SELECT increment FROM '.$this->search_full_name.' order by
                     increment
