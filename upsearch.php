@@ -150,9 +150,9 @@ class Upsearch
     protected $rowsGetCount;
 
     /**
-     * comma separated list of columns of table TablePos
+     * array of columns of table TablePos
      *
-     * @var
+     * @var array
      */
     protected $fieldsList;
 
@@ -278,9 +278,10 @@ class Upsearch
             $this->message['all'][] = $m;
             throw new ErrorException($m);
         }
+        $fieldsList = implode(',', $this->fieldsList);
         //get data from TablePos
         $q = 'SELECT increment, ratings, goroda, CONCAT_WS(" ",'
-            . $this->fieldsList.
+            . $fieldsList.
             ') as text_insert FROM '
             . $this->tablePos_name .' ORDER BY increment ASC LIMIT '
             . $offset
@@ -339,9 +340,10 @@ class Upsearch
             $this->message['all'][] = $m;
             throw new ErrorException($m);
         }
+        $fieldsList = implode(',', $this->fieldsList);
         //get data from TablePos
         $q = 'SELECT increment, ratings, goroda, CONCAT_WS(" ",'
-            . $this->fieldsList.
+            . $fieldsList.
             ') as text_insert FROM '
             . $this->tablePos_name .' WHERE
             increment >'.$last_increment.'

@@ -8,7 +8,7 @@ $settings['database']['params']['password']='sss';
 $settings['database']['params']['dbname']='test';
 $settings['database']['params']['charset']='utf8';
 $settings['rowsGetCount']=2000;
-$settings['fieldsList']='field1,field2,field3';
+$settings['fieldsList']=array('field1','field2','field3');;
 /*
  * CREATE TABLE IF NOT EXISTS tablePos (
     inc int(8) unsigned NOT NULL AUTO_INCREMENT,
