@@ -423,6 +423,8 @@ class Upsearch
         return true;
     }
 
+
+
     /**
      * Удаляем теги!
     Удаляем мнемоники! Типа &nbsp; ()
@@ -447,12 +449,23 @@ class Upsearch
     (
         $str
     ) {
+        /**
+         * callback function for preg_replace_callback
+         *
+         * @param array $m preg match array of string matches
+         *
+         * @return string
+         */
+        function callback1
+        (
+            $m
+        ) {
+            return mb_convert_encoding($m[1], "UTF-8", "HTML-ENTITIES");
+        }
         //Удаляем мнемоники! Типа &nbsp; ()
         $str      = preg_replace_callback(
             "/(&#[0-9]+;)/u",
-            function ($m) {
-                return mb_convert_encoding($m[1], "UTF-8", "HTML-ENTITIES");
-            },
+            'callback1',
             $str
         );
 
@@ -463,25 +476,36 @@ class Upsearch
         $str      = preg_replace(
             '/\b[^\s]{1,2}\b/u', ' ', $str
         );
+        /**
+         * callback function for preg_replace_callback
+         *
+         * @param array $matches preg match array of string matches
+         *
+         * @return string
+         */
+        function callback2
+        (
+            $matches
+        ) {
+            $result = '';
+            switch ($matches[2]) {
+            case 'i':
+            case 'ї':
+                $result = $matches[1].'и'.$matches[3];
+                break;
+            case 'є':
+                $result = $matches[1].'е'.$matches[3];
+                break;
+            case 'Є':
+                $result = $matches[1].'Е'.$matches[3];
+                break;
+            }
+            return $matches[1].$matches[2].$matches[3].' '.$result;
+        }
         //Деблируем слова с украинскими буквами!
         $str      = preg_replace_callback(
             "/([а-яА-ЯёЁiїєЄ]+)([iїєЄ]+)([а-яА-ЯёЁiїєЄ]+)/",
-            function ($matches) {
-                $result = '';
-                switch ($matches[2]) {
-                case 'i':
-                case 'ї':
-                    $result = $matches[1].'и'.$matches[3];
-                    break;
-                case 'є':
-                    $result = $matches[1].'е'.$matches[3];
-                    break;
-                case 'Є':
-                    $result = $matches[1].'Е'.$matches[3];
-                    break;
-                }
-                return $matches[1].$matches[2].$matches[3].' '.$result;
-            },
+            'callback2',
             $str
         );//TODO test!
         $str = preg_replace('/( +)/u', ' ', $str);
