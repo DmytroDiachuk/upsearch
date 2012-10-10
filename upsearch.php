@@ -393,7 +393,7 @@ class Upsearch
             throw new ErrorException($m);
         }
         //create insertion query
-        $q = 'INSERT INTO '.$this->search_full_name.'
+        $q = 'INSERT IGNORE INTO '.$this->search_full_name.'
         (increment,ratings_order,goroda_id,full_text) VALUES ';
 
         for ($j=0;$j<$this->rowsCount;$j++) {
