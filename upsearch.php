@@ -235,7 +235,8 @@ class Upsearch
         $q = 'TRUNCATE TABLE search_full';
         $clear_table = $this->db->query($q);
         if ((!$clear_table) || $this->db->errno) {
-            $m = 'resetTable: Errors: '.$this->db->error;
+            $m = 'resetTable: Errors: '.$this->db->error.' Query was:'
+                . $q.'<br/>';;
             $this->message['all'][] = $m;
             throw new ErrorException($m);
         }
@@ -243,9 +244,11 @@ class Upsearch
         $q = 'ALTER TABLE '.$this->search_full_name.' DROP INDEX full_text';
         $drop_index = $this->db->query($q);
         if ((!$drop_index) || $this->db->errno) {
-            $m = 'resetTable: Errors: '.$this->db->error;
+            $m = 'resetTable: Errors: '.$this->db->error.' Query was:'
+                . $q.'<br/>';;
             $this->message['all'][] = $m;
-            throw new ErrorException($m);
+            //throw new ErrorException($m);
+            //drop index return error if not exists
         }
         return true;
 
@@ -274,7 +277,7 @@ class Upsearch
         //get data from TablePos
         $q = 'SELECT increment, ratings, goroda, CONCAT('
             . $this->fieldsList.
-            ') as text_insert FROM'
+            ') as text_insert FROM '
             . $this->tablePos_name .' ORDER BY increment ASC LIMIT '
             . $offset
             . ', '
@@ -282,7 +285,8 @@ class Upsearch
         $get_data = $this->db->query($q);
 
         if ((!$get_data) || $this->db->errno) {
-            $m = 'GetDataTable: Errors: '.$this->db->error;
+            $m = 'GetDataTable: Errors: '.$this->db->error.' Query was:'
+                . $q.'<br/>';;
             $this->message['all'][] = $m;
             throw new ErrorException($m);
         }
@@ -292,12 +296,10 @@ class Upsearch
         }
         $this->rowsGetOffset += $this->rowsGetCount;
 
-
-
         //fetch data to $fieldsData
 
         $i=0;//row counter
-        while (($row = $get_data->fetch_assoc())!==false) {
+        while (($row = $get_data->fetch_assoc())!=false) {
             $this->fieldsData[$i]['increment'] = $row['increment'];
             $this->fieldsData[$i]['ratings']= $row['ratings'];
             $this->fieldsData[$i]['goroda'] = $row['goroda'];
@@ -309,11 +311,10 @@ class Upsearch
 
         }
 
-
-
         return $it_is_not_last;
 
     }
+
     /**
      * get table tablePos
      *
@@ -344,17 +345,17 @@ class Upsearch
         $get_data = $this->db->query($q);
 
         if ((!$get_data) || $this->db->errno) {
-            $m = 'GetDataTable: Errors: '.$this->db->error;
+            $m = 'GetDataTable: Errors: '.$this->db->error.' Query was:'
+                . $q.'<br/>';;
             $this->message['all'][] = $m;
             throw new ErrorException($m);
         }
         $this->rowsCount = $get_data->num_rows;
 
-
         //fetch data to $fieldsData
 
         $i=0;//row counter
-        while (($row = $get_data->fetch_assoc())!==false) {
+        while (($row = $get_data->fetch_assoc())!=false) {
             $this->fieldsData[$i]['increment'] = $row['increment'];
             $this->fieldsData[$i]['ratings']= $row['ratings'];
             $this->fieldsData[$i]['goroda'] = $row['goroda'];
@@ -451,6 +452,12 @@ class Upsearch
         $str
     ) {
 
+        if ($str=='') {
+
+            return $str;
+
+        }
+
         //Удаляем мнемоники! Типа &nbsp; ()
         $patterns[0] = '/&#(\d\d*);/u';
         $patterns[1] = '/&(\w*);/u';
@@ -460,41 +467,36 @@ class Upsearch
 
         $str      = preg_replace($patterns, ' ', $str);
 
-        /**
-         * callback function for preg_replace_callback
-         *
-         * @param array $matches preg match array of string matches
-         *
-         * @return string
-         */
-        function callback
-        (
-            $matches
-        ) {
-
-            $result = '';
-            switch ($matches[2]) {
-            case 'i':
-            case 'ї':
-                $result = $matches[1].'и'.$matches[3];
-                break;
-            case 'є':
-                $result = $matches[1].'е'.$matches[3];
-                break;
-            case 'Є':
-                $result = $matches[1].'Е'.$matches[3];
-                break;
-            }
-            return $matches[1].$matches[2].$matches[3].' '.$result;
-        }
         //Деблируем слова с украинскими буквами!
+
         $str      = preg_replace_callback(
             "/([а-яА-ЯёЁiїєЄ]+)([iїєЄ]+)([а-яА-ЯёЁiїєЄ]+)/u",
-            'callback',
+            create_function(
+                '$matches', '
+                        $result = "";
+            switch ($matches[2]) {
+            case "i":
+            case "ї":
+                $result = $matches[1]."и".$matches[3];
+                break;
+            case "є":
+                $result = $matches[1]."е".$matches[3];
+                break;
+            case "Є":
+                $result = $matches[1]."Е".$matches[3];
+                break;
+            }
+            return $matches[1].$matches[2].$matches[3]." ".$result;
+            '
+            ),
             $str
         );
 
-        $str = preg_replace('/( +)/u', ' ', $str);
+        $str = preg_replace(
+            '/( +)/u',
+            ' ',
+            $str
+        );
 
         return $str;
     }
@@ -586,7 +588,8 @@ class Upsearch
                     DESC limit 1';
             $selection = $this->db->query($q);
             if ((!$selection) || $this->db->errno) {
-                $m = 'doRealUpdate: Errors: '.$this->db->error;
+                $m = 'doRealUpdate: Errors: '.$this->db->error.' Query was:'
+                    . $q.'<br/>';;
                 $this->message['all'][] = $m;
                 throw new ErrorException($m);
             }
