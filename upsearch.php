@@ -450,33 +450,16 @@ class Upsearch
     (
         $str
     ) {
-        /**
-         * callback function for preg_replace_callback
-         *
-         * @param array $m preg match array of string matches
-         *
-         * @return string
-         */
-        function callback1
-        (
-            $m
-        ) {
-            return mb_convert_encoding($m[1], "UTF-8", "HTML-ENTITIES");
-        }
-        //Удаляем мнемоники! Типа &nbsp; ()
-        $str      = preg_replace_callback(
-            "/(&#[0-9]+;)/u",
-            'callback1',
-            $str
-        );
 
-        $str = str_replace("'", "", $str);
-        $preg     = '/[^а-яА-ЯЁёїєЄa-zA-Z0-9]/u';
-        $str = preg_replace($preg, ' ', $str);
+        //Удаляем мнемоники! Типа &nbsp; ()
+        $patterns[0] = '/&#(\d\d*);/u';
+        $patterns[1] = '/&(\w*);/u';
+        $patterns[2] = '/[^а-яА-ЯЁёїєЄa-zA-Z0-9]/u';
         //Удаляем с этого текста  все слова которые  имеют два и менше симолов
-        $str      = preg_replace(
-            '/\b[^\s]{1,2}\b/u', ' ', $str
-        );
+        $patterns[3] = '/\b[^\s]{1,2}\b/u';
+
+        $str      = preg_replace($patterns, ' ', $str);
+
         /**
          * callback function for preg_replace_callback
          *
@@ -484,10 +467,11 @@ class Upsearch
          *
          * @return string
          */
-        function callback2
+        function callback
         (
             $matches
         ) {
+
             $result = '';
             switch ($matches[2]) {
             case 'i':
@@ -505,10 +489,11 @@ class Upsearch
         }
         //Деблируем слова с украинскими буквами!
         $str      = preg_replace_callback(
-            "/([а-яА-ЯёЁiїєЄ]+)([iїєЄ]+)([а-яА-ЯёЁiїєЄ]+)/",
-            'callback2',
+            "/([а-яА-ЯёЁiїєЄ]+)([iїєЄ]+)([а-яА-ЯёЁiїєЄ]+)/u",
+            'callback',
             $str
-        );//TODO test!
+        );
+
         $str = preg_replace('/( +)/u', ' ', $str);
 
         return $str;
