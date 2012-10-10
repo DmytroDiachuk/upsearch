@@ -161,7 +161,7 @@ class Upsearch
      *
      * @var
      */
-    protected $rowsGetOffset = 0;
+    protected $rowsOffset = 0;
 
     /**
      * construct
@@ -202,10 +202,13 @@ class Upsearch
             $this->resetTable();
 
             //get, process
-            While ($this->getDataTable($this->rowsGetOffset)!=false) {
+            do {
+                $r = $this->getDataTable($this->rowsOffset);
                 //process  write data
-                $this->insertDataTable();
-            }
+                if ($this->rowsCount>0) {
+                    $this->insertDataTable();
+                }
+            } While ($r);
 
         }
         catch (ErrorException $e) {
@@ -267,7 +270,7 @@ class Upsearch
     (
         $offset
     ) {
-        $it_is_not_last = true;
+        $it_was_last = false;
         //connection should be established
         if (!$this->db) {
             $m = 'GetDataTable: Trying to reset table without connection to DB. ';
@@ -275,7 +278,7 @@ class Upsearch
             throw new ErrorException($m);
         }
         //get data from TablePos
-        $q = 'SELECT increment, ratings, goroda, CONCAT('
+        $q = 'SELECT increment, ratings, goroda, CONCAT_WS(" ",'
             . $this->fieldsList.
             ') as text_insert FROM '
             . $this->tablePos_name .' ORDER BY increment ASC LIMIT '
@@ -292,9 +295,9 @@ class Upsearch
         }
         $this->rowsCount = $get_data->num_rows;
         if ($this->rowsCount < $this->rowsGetCount) {
-            $it_is_not_last = false;
+            $it_was_last = true;
         }
-        $this->rowsGetOffset += $this->rowsGetCount;
+        $this->rowsOffset += $this->rowsGetCount;
 
         //fetch data to $fieldsData
 
@@ -311,7 +314,7 @@ class Upsearch
 
         }
 
-        return $it_is_not_last;
+        return !($this->rowsCount=0 || $it_was_last);
 
     }
 
@@ -336,7 +339,7 @@ class Upsearch
             throw new ErrorException($m);
         }
         //get data from TablePos
-        $q = 'SELECT increment, ratings, goroda, CONCAT('
+        $q = 'SELECT increment, ratings, goroda, CONCAT_WS(" ",'
             . $this->fieldsList.
             ') as text_insert FROM'
             . $this->tablePos_name .' WHERE
@@ -381,6 +384,7 @@ class Upsearch
     protected function insertDataTable
     ()
     {
+
         //connection should be established
         if (!$this->db) {
             $m = 'insertDataTable: Trying to insert table without connection to DB.';
@@ -389,17 +393,17 @@ class Upsearch
         }
         //create insertion query
         $q = 'INSERT INTO '.$this->search_full_name.'
-        (increment,ratings,goroda,text_insert) VALUES ';
+        (increment,ratings_order,goroda_id,full_text) VALUES ';
 
         for ($j=0;$j<$this->rowsCount;$j++) {
             //row
-            $s = '(';
+            $s = "('";
             foreach ($this->fieldsData[$j] as $value) {
                 //column
-                $s .= $value.',';
+                $s .= $value."','";
             }
-            $s = rtrim($s, ',');
-            $s .='),';
+            $s = rtrim($s, ",'");
+            $s .="'),";
 
             $q .= $s;
 
@@ -414,7 +418,7 @@ class Upsearch
             throw new ErrorException($m);
         }
 
-        $q = 'ALTER TABLE '.$this->search_full_name.' ADD FULLTEXT(text_insert)';
+        $q = 'ALTER TABLE '.$this->search_full_name.' ADD FULLTEXT(full_text)';
         $creation = $this->db->query($q);
         if ((!$creation) || $this->db->errno) {
             $m = 'insertDataTable: alter : Errors: '.$this->db->error.' Query was:'
@@ -473,20 +477,20 @@ class Upsearch
             "/([а-яА-ЯёЁiїєЄ]+)([iїєЄ]+)([а-яА-ЯёЁiїєЄ]+)/u",
             create_function(
                 '$matches', '
-                        $result = "";
-            switch ($matches[2]) {
-            case "i":
-            case "ї":
-                $result = $matches[1]."и".$matches[3];
-                break;
-            case "є":
-                $result = $matches[1]."е".$matches[3];
-                break;
-            case "Є":
-                $result = $matches[1]."Е".$matches[3];
-                break;
-            }
-            return $matches[1].$matches[2].$matches[3]." ".$result;
+                    $result = "";
+                    switch ($matches[2]) {
+                    case "i":
+                    case "ї":
+                        $result = $matches[1]."и".$matches[3];
+                        break;
+                    case "є":
+                        $result = $matches[1]."е".$matches[3];
+                        break;
+                    case "Є":
+                        $result = $matches[1]."Е".$matches[3];
+                        break;
+                    }
+                    return $matches[1].$matches[2].$matches[3]." ".$result;
             '
             ),
             $str
@@ -599,10 +603,13 @@ class Upsearch
             //Вытягиваем все записи с таблици   TablePos  в которых increment больше
             //за последний
             //get, process
-            While ($this->getLastDataTable($last_increment)!=false) {
+            do {
+                $r = $this->getLastDataTable($last_increment);
                 //process  write data
-                $this->insertDataTable();
-            }
+                if ($this->rowsCount>0) {
+                    $this->insertDataTable();
+                }
+            } While ($r);
 
         }
         catch (ErrorException $e) {
